@@ -9,6 +9,7 @@
 (when (not package-archive-contents)
   (package-refresh-contents))
 
+(setq package-check-signature nil)
 ;;(defvar myPackages
 ;;  '(better-defaults
 ;;    elpy
@@ -66,12 +67,46 @@
 
 (show-paren-mode)
 
+;; C stuff
 (add-hook 'c-mode-hook 'flycheck-mode)
-(add-hook 'c-mode-hook 'nlinum-mode)
+(add-hook 'c-mode-hook 'linum-mode)
 (add-hook 'c-mode-hook 'company-mode)
 (add-hook 'c-mode-hook 'rainbow-identifiers-mode)
+;; change the indentation level
+(setq c-default-style "linux"
+      c-basic-offset 4)
+;; add a nice /* comments blocks logic for c mode
+(defun my-prettify-c-block-comment (orig-fun &rest args)
+  (let* ((first-comment-line (looking-back "/\\*\\s-*.*"))
+         (star-col-num (when first-comment-line
+                         (save-excursion
+                           (re-search-backward "/\\*")
+                           (1+ (current-column))))))
+    (apply orig-fun args)
+    (when first-comment-line
+      (save-excursion
+        (newline)
+        (dotimes (cnt star-col-num)
+          (insert " "))
+        (move-to-column star-col-num)
+        (insert " */"))
+      ;;(move-to-column star-col-num) ; comment this line if using bsd style
+      ;;(insert "*") ; comment this line if using bsd style
+     ))
+  ;; Ensure one space between the asterisk and the comment
+  (when (not (looking-back " "))
+    (insert " ")))
+(advice-add 'c-indent-new-comment-line :around #'my-prettify-c-block-comment)
+;; (advice-remove 'c-indent-new-comment-line #'my-prettify-c-block-comment)
 
-(add-hook 'python-mode-hook 'nlinum-mode)
+;; function to insert a doc comment
+(defun insert-doc-comment () (interactive)
+       (insert "/**\n * ")
+       (save-excursion
+         (insert "\n * @param\n * @return\n * @exception\n * @author mathieu2em\n */")))
+;; add this keybing to insert doc comment in c-mode using shift-f1
+(define-key global-map [(S-f1)] 'insert-doc-comment)
+
 (add-hook 'python-mode-hook 'flycheck-mode)
 (add-hook 'python-mode-hook 'company-mode)
 (add-hook 'python-mode-hook 'rainbow-identifiers-mode)
@@ -101,9 +136,9 @@
 (set-face-background 'trailing-whitespace "yellow")
 
 ;; Also show tabs.
-(defface extra-whitespace-face
-  '((t (:background "pale green")))
-  "Color for tabs and such.")
+;;(defface extra-whitespace-face
+;;  '((t (:background "pale green")))
+;;  "Color for tabs and such.")
 
 (defvar bad-whitespace
   '(("\t" . 'extra-whitespace-face)))
@@ -163,7 +198,7 @@
  '(objed-cursor-color "#e74c3c")
  '(package-selected-packages
    (quote
-    (goto-last-change evil rainbow-identifiers default-text-scale web-mode buffer-move web php-mode nlinum-hl nlinum auto-complete-clang-async ac-clang flycheck-clang-tidy flycheck-clang-analyzer flycheck auto-complete-clang auto-save-buffers-enhanced company-c-headers markdown-preview-eww markdown-mode+ markdown-mode love-minor-mode company-lua lua-mode flymake-lua magit ac-geiser ssh geiser c-eldoc monokai-theme doom-modeline)))
+    (csv-mode csv org-attach-screenshot auctex latex-preview-pane flycheck-clangcheck company goto-last-change evil rainbow-identifiers default-text-scale web-mode buffer-move web php-mode auto-complete-clang-async ac-clang flycheck-clang-tidy flycheck-clang-analyzer flycheck auto-complete-clang auto-save-buffers-enhanced company-c-headers markdown-preview-eww markdown-mode+ markdown-mode love-minor-mode company-lua lua-mode flymake-lua magit ac-geiser ssh geiser c-eldoc monokai-theme doom-modeline)))
  '(pos-tip-background-color "#FFFACE")
  '(pos-tip-foreground-color "#272822")
  '(safe-local-variable-values (quote ((TeX-master . "geiser"))))
